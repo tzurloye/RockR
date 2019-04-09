@@ -8,6 +8,10 @@ require(shinyjs)
 
 #Data manipulation
 require(plyr)
+require(glue)
+
+#Latex support
+require(latex2exp)
 
 #Data loading
 require(readxl)
@@ -16,7 +20,6 @@ require(readr)
 #Plotting
 require(ggplot2)
 require(ggtern)
-#require(gginnards)
 require(ggalt)
 
 # Load this package last!
@@ -35,12 +38,14 @@ ui <- fluidPage(
 
   tags$head(includeHTML(("google-analytics.html"))),
   
+  tags$head(tags$script(src = "scripts2.js")),
+  
   # This code is used to build what shows in the users browser tab when the app is loaded
   list(tags$head(HTML('<link rel="icon", href="Figs/trident_large.png",
                       type="image/png" />'))),
   div(style="padding: 0px 0px; width: '100%'",
       titlePanel(
-        title="", windowTitle="RockR! v.2.2" # Change name and version here!
+        title="", windowTitle="RockR! v.2.45" # Change name and version here!
       )
   ),
 
@@ -54,7 +59,17 @@ ui <- fluidPage(
   ),
   
   div(class = "icon-bar",
-      # Create url with the 'twitter-share-button' class
+      #github icon
+      a(href = "https://github.com/RockRwebapp/RockR",
+        class = "fa fa-github",
+        target = "_blank",
+        style = "display: inline-block; vertical-align: middle",
+        onclick = "gtag('event', 'github_icon', {
+        'event_category': 'link click',
+        'event_label': 'user clicked github icon link'
+        })"
+      ),
+      # Create url with the 'facebook-share-button' class
       a(href = "https://www.facebook.com/RockRwebapp/?eid=ARAR3piAw1ZiSVQWLZzVOEJa47Zn11XKpC8WY8s0Izli2wTlSi7mFzaOVdEIAg1y8UJYtcJ_XKD2jIs",
         class = "fa fa-facebook",
         target = "_blank",
@@ -80,34 +95,34 @@ ui <- fluidPage(
         class="twitter-share-button",
         style = "display: inline-block; vertical-align: middle"
       ),
+
       includeScript("widgets.js")
-      
+
   ),
   
   navbarPage( id = "tabs",
 
     # The title section below is where you can alter the navbar title and logo
-    title = a(
-      fluidRow(
-        column(2,
-             img(src="Figs/trident_large.png", height = 40, width = 40)
-             ),
-        column(10,
-            p("IUPUI Earth Sciences Apps")
-             )
-        ),
-      id = "linkIUPUI",
-      target = "_blank",
-      href = "https://earthsciences.iupui.edu/",
-      style = "color: white; font-size: 20px; font-weight: bold",
-      onclick = "gtag('event', 'IUPUIEarthSciences', {
-          'event_category': 'link click',
-          'event_label': 'user clicked IUPUI Earth Sciences link'
-          })"
+    title = 
+      a(id = "earthSciTitle",
+        img(src="Figs/trident_large.png", 
+            height = 40, 
+            width = 40, 
+            style = "display: inline-block;"),
+        p("IUPUI Earth Sciences Apps", 
+          style = "display: inline-block;"),
+        id = "linkIUPUI",
+        target = "_blank",
+        href = "https://earthsciences.iupui.edu/",
+        style = "color: white; font-size: 20px; font-weight: bold",
+        onclick = "gtag('event', 'IUPUIEarthSciences', {
+            'event_category': 'link click',
+            'event_label': 'user clicked IUPUI Earth Sciences link'
+            })"
       ),
 
     # UI code for App Info tab
-    tabPanel ( "RockR! Home", fluid = TRUE,# Change app title here!
+    tabPanel (id = "home", "RockR! Home", fluid = TRUE,# Change app title here!
                
                # this block of code supresses all error output in the final app
                # during development comment this out!!!!
@@ -115,22 +130,8 @@ ui <- fluidPage(
                           ".shiny-output-error { visibility: hidden; }",
                           ".shiny-output-error:before { visibility: hidden; }"
                ),
-
-               div(style="vertical-align:top; text-align:center",
-                   img(src = "Figs/RockR.png", width = "30%")
-               ),
-               
-               tabsetPanel(
-                 tabPanel("Introduction",
-                          includeHTML("www/Info/RockRInfo.html")
-                 ),
-                 tabPanel("Available Plots",
-                          includeHTML("www/Info/allTables.html")
-                 ),
-                 tabPanel("Credits",
-                          includeHTML("www/Info/RockRCredits.html")
-                 )
-               )
+              
+              uiOutput("appLanding")
     ),
     
     # UI code for Bivariate tab
@@ -173,6 +174,208 @@ ui <- fluidPage(
                
                source("uiPT.R", local = TRUE)$value
                
+    ),
+    
+    tabPanel(id = "resources", "Resources", fluid = TRUE,
+             
+             hr(style="border-color: black;"),
+             h2("Geologic/Geochemical Data Portals", align = "center"),
+             hr(style="border-color: black;"),
+             
+             fluidRow(
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               column(4,
+                      div(title = "EarthChem",
+                        a(
+                          img(src = "Figs/EarthChem.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://www.earthchem.org/data/access"
+                          )
+                      )
+               ),
+               column(4,
+                      div(title = "USGS Data Catalog",
+                        a(
+                          img(src = "Figs/USGS.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://data.usgs.gov/datacatalog/"
+                          )
+                        )
+               ),
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               align = "center"
+             ),
+             
+             hr(style="border-color: black;"),
+             h2("Mineralogy and Petrology Databases", align = "center"),
+             hr(style="border-color: black;"),
+             
+             fluidRow(
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               column(4,
+                      div(title = "Mineral Data",
+                        a(img(src = "Figs/MinDat.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://www.mindat.org/"
+                        )
+                      )
+               ),
+               column(4,
+                      div(title = "Web Mineral",
+                        a(img(src = "Figs/WebMineral.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "http://www.webmineral.com/"
+                        )
+                      )
+               ),
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               align = "center"
+             ),
+             
+             hr(style="border-color: black;"),
+             h2("Geologic/Geochemical Societies", align = "center"),
+             hr(style="border-color: black;"),
+             
+             fluidRow(
+               column(4,
+                      div(title = "Geological Society of America",
+                        a(img(src = "Figs/gsa.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://www.geosociety.org/"
+                        )
+                      )
+               ),
+               column(4,
+                      div(title = "American Geoscientific Institute",
+                          a(img(src = "Figs/agi.png", height = '300px', width = '300px'),
+                            target = "_blank",
+                            href = "https://www.americangeosciences.org/"
+                          )
+                      )
+               ),
+               column(4,
+                      div(title = "American Geophysical Union",
+                        a(img(src = "Figs/agu.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://sites.agu.org/"
+                        )
+                      )
+               ),
+               align = "center"
+             ),
+             br(),
+             br(),
+             fluidRow(
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               column(4,
+                      div(title = "American Institute of Professional Geologists",
+                        a(img(src = "Figs/aipg.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "http://www.aipg.org/"
+                        )
+                      )
+               ),
+               column(4,
+                      div(title = "Mineral Society of America",
+                        a(img(src = "Figs/minsocam.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "http://www.minsocam.org/"
+                        )
+                      )
+               ),
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               align = "center"
+             ),
+             
+             hr(style="border-color: black;"),
+             h2("Useful Resources", align = "center"),
+             hr(style="border-color: black;"),
+             
+             fluidRow(
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               column(4,
+                      div(title = "Interactive Periodic Table",
+                        a(img(src = "Figs/PTable.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://www.ptable.com/#"
+                        )
+                      )
+               ),
+               column(4,
+                      div(title = "Geo Plotters",
+                        a(img(src = "Figs/GeoPlotters.png", height = '300px', width = '300px'),
+                          target = "_blank",
+                          href = "https://www.geoplotters.com/"
+                        )
+                      )
+               ),
+               column(2,
+                      div(height = 300, width = 300)
+               ),
+               align = "center"
+             ),
+
+             hr(style="border-color: black;"),
+             h2("Open Access Publications", align = "center"),
+             p("These individual publication links are all available via the ", 
+               a(href = "http://www.minsocam.org/msa/openaccess_publications/", 
+                 "Mineral Society of America Open Access Publications List.",
+                 target = "_blank"), 
+               align = "center"),
+             hr(style="border-color: black;"),
+             
+             fluidRow(
+               column(3,
+                      div(title = "Guide to Thin Section Microscopy",
+                          a(img(src = "Figs/ThinGuide.png", width = '300px'),
+                            target = "_blank",
+                            href = "Info/thin_section_microscopy_min.pdf"
+                          )
+                      )
+               ),
+               column(3,
+                      div(title = "Quartz: A Bullseye on Optical Activity",
+                          a(img(src = "Figs/Quartz_Bullseye_on_Optical_Activity.png", width = '300px'),
+                            target = "_blank",
+                            href = "Info/Quartz_Bullseye_on_Optical_Activity.pdf"
+                          )
+                      )
+               ),
+               column(3,
+                      div(title = "Double Trouble: Navigating Birefringence",
+                          a(img(src = "Figs/Double_Trouble_Navigating_Birefringence.png", width = '300px'),
+                            target = "_blank",
+                            href = "Info/Double_Trouble_Navigating_Birefringence.pdf"
+                          )
+                      )
+               ),
+               column(3,
+                      div(title = "Metasomatism and Metasomatic Rocks",
+                          a(img(src = "Figs/Metasomatism.png", width = '300px'),
+                            target = "_blank",
+                            href = "Info/Metasomatism.pdf"
+                          )
+                      )
+               ),
+               align = "center"
+             ),
+             br(),
+             br()
+             
     ),
     
     # UI code for Help tab
@@ -223,50 +426,32 @@ ui <- fluidPage(
                          anywhere at anytime, even in the field! Have fun and rock on!"),
                       
                       h4("Because RockR is an ongoing project. We update the app frequently as we discover bugs that need
-                         addressing or when we wish to add functionality. However, you can download current version of RockR as a zip
-                         file using the button below. Its open source so feel free to modify/share the program as you see fit."),
+                         addressing or when we wish to add functionality. However, you can download current version of RockR using the Github button below. It's open source so feel free to modify/share the program as you see fit following the ",
+                         a("GNU GPL V3.0 license", href = "https://github.com/RockRwebapp/RockR/blob/master/LICENSE", target = "_blank"), "."),
                       
                       br(),
-                      downloadButton('baseDownloadRockR', "Get RockR!"),
+                      #downloadButton('baseDownloadRockR', "Get RockR!")
+                      #github icon
+                      a(p("@RockRwebapp"),
+                        href = "https://github.com/RockRwebapp/RockR",
+                        class = "fa fa-github",
+                        target = "_blank",
+                        style = "display: inline-block; vertical-align: middle; font-size: 48px",
+                        onclick = "gtag('event', 'github_icon', {
+                        'event_category': 'link click',
+                        'event_label': 'user clicked github icon link'
+                        })")
                       
-                      br(),
-                      h3("Most recent update"),
-                      h4("RockR! v.2.2 on 3.January.2019"),
-                      h4("Added Folk (1954) sediment classification ternary diagram"),
-                      h4("Updated references and available plots tab to reflect Folk addition"),
-                      br(),
-                      h3("Past updates"),
-                      h4("RockR! v.2.1 on 20.December.2018"),
-                      h4("Added social media links and share buttons"),
-                      h4("Navbar is now fixed when user scrolls, allowing easier app navigation"),
-                      br(),
-                      h4("RockR! v.2.0 on 18.November.2018"),
-                      h4("GGplot plotting code overhaul. Should be more efficient and faster overall"),
-                      h4("Paths added to BV, PT, and Ternary sections"),
-                      h4("Moved available plots tab to front page."),
-                      h4("Moved RockR download to help page."),
-                      h4("Added Earth Sciences homepage link to navbar title."),
-                      h4("Reorganized files within RockR directory to put all supporting files under 'www/'."),
-                      h4("Loading spinner added to plots in all sections."),
-                      br(),
-                      h4("RockR! v.1.9.1 on 14.November.2018"),
-                      h4("Added extrusive and intrusive TAS diagrams modeled after Cox et al. (1979) and Wilson (2007), respectively."),
-                      h4("Added peridotite classification ternary diagram."),
-                      h4("Updated available plots table."),
-                      br(),
-                      h4("RockR! v.1.9 on 13.November.2018"),
-                      h4("Added paths to Mm group control options."),
-                      h4("Added Collision and Intrusion labels to Mm paths."),
-                      h4("Improved PT_example file."),
-                      h4("Updated some text."),
-                      br(),
-                      h4("RockR! v.1.7 on 9.November.2018"),
-                      h4("Added support for .csv import."),
-                      h4("Added click and drag zoom functionality to PT Meta plots."),
-                      br()
                       )
            )
-           )
+          ),
+    tabPanel(title = ""),
+    tabPanel(title = ""),
+    tabPanel(title = ""),
+    tabPanel(title = ""),
+    tabPanel(title = ""),
+    tabPanel(title = ""),
+    tabPanel(title = "")
   )
 )
 
@@ -275,17 +460,48 @@ ui <- fluidPage(
 ##### Server ####
 server <- function(input, output, session){
   
-  # watches for users to click the IUPUI Earth Sciences link and records the event with Google Analytics
-  # onclick("linkIUPUI",
-  #         ga_collect_event(event_category = "Link", event_action = "Link Clicked",
-  #                                       event_label = "User clicked IUPUI link")
-  #         )
-  
   onclick(
     id = "tabs",
     shinyjs::runjs("window.scrollTo(0,0)")
   )
-
+  
+  output$appLanding <- renderUI({
+    div(
+      div(class="slideshow-container", style= glue('background-image: url("Figs/LandingImages/RockRLanding{round(runif(1,1,6),0)}.png");
+                     background-size: 100% 100%; vertical-align:top; text-align:center; min-height: calc(100vh - 100px);
+                     padding: 0px 0px; opacity: 1;'),
+          div(
+            img(src = "Figs/RockRHexBig.png", width = "30%")
+          ),
+          br(),
+          h1("Welcome! Let's make a ", style = 'font-weight: bold; display:table; background-color: #ffffff;
+                        opacity: .9; 0px solid black; padding: 15px; margin: 0 auto;',
+             span(id = "verb-and-cursor",
+                  span(id = "verb", style = 'color: #990000; font-size: 40px; font-weight: bold;'),
+                  span(id = "cursor", "|", style = 'color: #01426A; font-size: 40px; font-weight: bold;')
+             ),
+             "plot."
+          ),
+          br(),
+          span(style = 'background-color: #ffffff; border-radius: 25px; opacity: .75; padding: 5px;',
+               "Scroll to learn more")
+      ),
+      
+      br(),
+      
+      tabsetPanel(
+        tabPanel("Introduction",
+                 includeHTML("www/Info/RockRInfo.html")
+        ),
+        tabPanel("Available Plots",
+                 includeHTML("www/Info/allTables.html")
+        ),
+        tabPanel("Credits",
+                 includeHTML("www/Info/RockRCredits.html")
+        )
+      )
+  )
+  })
 
   # # load Ternary section server code
   source("serverBV.R", local = TRUE)$value
